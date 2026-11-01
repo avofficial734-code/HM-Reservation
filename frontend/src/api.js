@@ -9,7 +9,26 @@ export class ApiError extends Error {
   }
 }
 
-export async function requestJson(url, options) {
+// In-memory only, so cached staff records disappear on reload or sign-out.
+const unchangedCache = new Map()
+export function clearConditionalCache() { unchangedCache.clear() }
+
+// Sends the last ETag so an unchanged response comes back as an empty 304.
+export async function requestJsonIfChanged(url, options = {}) {
+  const cacheKey = url + '\n' + (options.headers?.Authorization || '')
+  const cached = unchangedCache.get(cacheKey)
+  const headers = cached ? { ...options.headers, 'If-None-Match': cached.etag } : options.headers
+  return requestJson(url, { ...options, headers }, response => {
+    if (response.status === 304 && cached) return cached.result
+    return undefined
+  }, (response, result) => {
+    const etag = response.headers.get('ETag')
+    if (etag) unchangedCache.set(cacheKey, { etag, result })
+    else unchangedCache.delete(cacheKey)
+  })
+}
+
+export async function requestJson(url, options, notModified, received) {
   if (!API_CONFIGURED) {
     throw new ApiError('Online booking is not connected yet. Please contact the HM Laboratory Office for assistance.')
   }
@@ -17,6 +36,8 @@ export async function requestJson(url, options) {
   let body
   try {
     response = await fetch(backendOrigin + url, options)
+    const unchanged = notModified?.(response)
+    if (unchanged !== undefined) return unchanged
     body = await response.text()
   } catch {
     throw new ApiError('The reservation service cannot be reached. Please try again shortly.')
@@ -40,6 +61,7 @@ export async function requestJson(url, options) {
   if (!result || typeof result !== 'object') {
     throw new ApiError('The reservation service returned an incomplete response. Please try again.', response.status)
   }
+  received?.(response, result)
   return result
 }
 

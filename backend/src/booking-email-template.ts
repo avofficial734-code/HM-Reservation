@@ -2,7 +2,7 @@ import type { Row } from './record-store.js';
 
 export type BookingEmailEvent = 'instructor-approved' | 'instructor-declined' | 'admin-approved' | 'admin-rejected' | 'staff-admin-approved' | 'staff-admin-rejected';
 
-const siteUrl = 'https://hmreservation.vercel.app/';
+const siteUrl = 'https://hm-reservation.vercel.app/';
 const messages: Record<BookingEmailEvent, { subject: string; heading: string; body: string; status: string; color: string; tint: string }> = {
   'instructor-approved': {
     subject: 'Your HM Laboratory request passed instructor review',

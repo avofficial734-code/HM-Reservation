@@ -23,8 +23,8 @@ describe('booking status email',()=>{
   expect(payload.text).toContain('Space unavailable');
   expect(payload.text).toContain(booking.id);
   expect(payload.text).not.toContain('recovery code');
-  expect(payload.html).toContain('https://hmreservation.vercel.app/cec.png');
-  expect(payload.html).toContain('https://hmreservation.vercel.app/hm-logo.webp');
+  expect(payload.html).toContain('https://hm-reservation.vercel.app/cec.png');
+  expect(payload.html).toContain('https://hm-reservation.vercel.app/hm-logo.webp');
   expect(payload.html).toContain('Space unavailable');
   expect(close).toHaveBeenCalled();
  });
@@ -52,7 +52,7 @@ describe('booking status email',()=>{
   expect(payload).toMatchObject({to:'arvin@example.com',subject:'A request you endorsed is approved'});
   expect(payload.text).toContain('Hello Arvin S. Ode,');
   expect(payload.text).toContain('Requested by: Student');
-  expect(payload.text).toContain('https://hmreservation.vercel.app/instructor');
+  expect(payload.text).toContain('https://hm-reservation.vercel.app/instructor');
   expect(createBookingEmail({...booking,instructor:'Arvin S. Ode'},'staff-admin-rejected').text).toContain('Reason: Space unavailable');
  });
  it('reports delivery failure without throwing',async()=>{

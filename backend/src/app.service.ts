@@ -53,6 +53,19 @@ export class AppService {
  async listInstructors(){const data=await this.storage.read();return data.adminKeys.filter(row=>row.role==='instructor').map(row=>({id:row.id,name:this.instructorName(data,row)})).sort((a,b)=>a.name.localeCompare(b.name));}
  async facilityPhoto(id:string){const facility=this.facilitiesFrom(await this.storage.read()).find(f=>f.id===id) as Row|undefined;if(!facility?.photo)throw new NotFoundException('Facility photo not found.');return Buffer.from(facility.photo.split(',')[1]!,'base64');}
  async collegeOrganization(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-organization');return {groups:row?JSON.parse(row.content!):null};}
+ // The public page links each portrait instead of embedding it, so the organization list stays small and
+ // each photo is cached on its own. The id is a fingerprint of the photo, so a changed photo gets a new link.
+ private organizationPhotoId(photo:string){return createHash('sha256').update(photo).digest('hex').slice(0,24);}
+ async publicCollegeOrganization(){
+  const {groups}=await this.collegeOrganization() as {groups:{title:string;items:{name:string;title?:string;photo:string}[]}[]|null};
+  return {groups:groups?.map(group=>({...group,items:group.items.map(person=>person.photo?{...person,photo:`/api/organization/photos/${this.organizationPhotoId(person.photo)}`}:person)}))??null};
+ }
+ async organizationPhoto(id:string){
+  const {groups}=await this.collegeOrganization() as {groups:{items:{photo:string}[]}[]|null};
+  const photo=(groups||[]).flatMap(group=>group.items).map(person=>person.photo).find(value=>value&&this.organizationPhotoId(value)===id);
+  if(!photo)throw new NotFoundException('Organization photo not found.');
+  return Buffer.from(photo.split(',')[1]!,'base64');
+ }
  async collegeContent(){const row=(await this.storage.read()).organization.find(item=>item.id==='college-content');return {sections:row?JSON.parse(row.content!):null};}
  async saveCollegeContent(input:unknown){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new BadRequestException('Invalid college content.');

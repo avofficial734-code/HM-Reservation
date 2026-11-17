@@ -1,8 +1,9 @@
 import './CollegeOrganization.css'
 import {normalizeOrganizationPerson} from './organization-person'
+import { apiFileUrl } from './api'
 
 function PersonAvatar({photo}){
- return photo?<img className="organization-avatar" src={photo} alt="" loading="lazy" width="48" height="48"/>:<span className="organization-avatar organization-avatar-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.3-3.5 2.7-5.5 6.5-5.5s6.2 2 6.5 5.5"/></svg></span>
+ return photo?<img className="organization-avatar" src={apiFileUrl(photo)} alt="" loading="lazy" width="48" height="48"/>:<span className="organization-avatar organization-avatar-empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.3-3.5 2.7-5.5 6.5-5.5s6.2 2 6.5 5.5"/></svg></span>
 }
 
 export default function CollegeOrganization({groups}){

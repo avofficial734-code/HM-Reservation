@@ -210,6 +210,19 @@ describe('reservations',()=>{
   expect(JSON.parse(saved.inventorySelection||'[]')[22]).toMatchObject({id:items[22].id,quantity:1,name:items[22].name});
   expect(saved.equipment).toContain(items[22].name);
  });
+ it('links organization portraits instead of embedding them publicly',async()=>{
+  const photo='data:image/jpeg;base64,/9j/'+Buffer.from('portrait-bytes').toString('base64');
+  await service.saveCollegeOrganization({groups:[{title:'Laboratory team',items:[{name:'With Photo',photo},{name:'No Photo',photo:''}]}]});
+  const shown=await service.publicCollegeOrganization();
+  const [withPhoto,withoutPhoto]=shown.groups![0].items;
+  expect(withPhoto.photo).toMatch(/^\/api\/organization\/photos\/[0-9a-f]{24}$/);
+  expect(withoutPhoto.photo).toBe('');
+  expect(JSON.stringify(shown)).not.toContain('base64');
+  const bytes=await service.organizationPhoto(withPhoto.photo.split('/').pop()!);
+  expect(bytes.equals(Buffer.from(photo.split(',')[1],'base64'))).toBe(true);
+  await expect(service.organizationPhoto('0'.repeat(24))).rejects.toThrow('not found');
+  expect((await service.collegeOrganization()).groups[0].items[0].photo).toBe(photo);
+ });
  it('saves and validates the public college organization',async()=>{
   expect(await service.collegeOrganization()).toEqual({groups:null});
   const groups=[{title:'Laboratory team',items:[{name:'Example Person – Laboratory In-Charge',photo:''}]}];

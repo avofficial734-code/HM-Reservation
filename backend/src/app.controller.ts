@@ -1,4 +1,4 @@
-import { Body, Header, StreamableFile, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
+import { Body, Header, StreamableFile, Controller, Delete, Get, Headers, NotFoundException, Param, Patch, Post } from '@nestjs/common';
 import { AppService } from './app.service.js';
 @Controller()
 export class AppController {
@@ -15,7 +15,10 @@ export class AppController {
  @Header('Cache-Control','no-store')
  @Get('api/inventory') inventory(){return this.appService.listInventory();}
  @Header('Cache-Control','no-store')
- @Get('api/organization') organization(){return this.appService.collegeOrganization();}
+ @Get('api/organization') organization(){return this.appService.publicCollegeOrganization();}
+ @Get('api/organization/photos/:id')
+ @Header('Cache-Control','public, max-age=31536000, s-maxage=31536000, immutable')
+ organizationPhoto(@Param('id') id:string){if(!/^[0-9a-f]{24}$/.test(id))throw new NotFoundException('Organization photo not found.');return this.appService.organizationPhoto(id).then(bytes=>new StreamableFile(bytes,{type:'image/jpeg',length:bytes.length}));}
  @Header('Cache-Control','no-store')
  @Get('api/college-content') collegeContent(){return this.appService.collegeContent();}
  @Get('api/admin/college-content') async adminCollegeContent(@Headers('authorization') key?:string){await this.appService.authorizeAdmin(key);return this.appService.collegeContent();}

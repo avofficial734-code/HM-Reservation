@@ -62,4 +62,6 @@ export async function requestJson(url, options, received) {
   return result
 }
 
-export function facilityPhotoUrl(photo){return photo?.startsWith('/api/')?backendOrigin+photo:photo}
+// Images the API serves (facility and organization photos) live on the backend's address.
+export function apiFileUrl(path){return path?.startsWith('/api/')?backendOrigin+path:path}
+export const facilityPhotoUrl=apiFileUrl

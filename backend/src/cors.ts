@@ -7,9 +7,10 @@ export function configureCors(app: INestApplication) {
   app.enableCors({
     origin: origins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Session', 'If-None-Match'],
-    // Lets staff portals skip unchanged record downloads with If-None-Match.
-    exposedHeaders: ['ETag'],
+    // If-None-Match stays allowed for pages loaded before the switch; ETags are off, so it is ignored.
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Session', 'X-Records-Version', 'If-None-Match'],
+    // Lets staff portals skip unchanged record downloads (see record-version.ts).
+    exposedHeaders: ['X-Records-Version'],
     credentials: false,
     maxAge: 600,
   });

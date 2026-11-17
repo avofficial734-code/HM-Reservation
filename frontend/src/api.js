@@ -13,22 +13,21 @@ export class ApiError extends Error {
 const unchangedCache = new Map()
 export function clearConditionalCache() { unchangedCache.clear() }
 
-// Sends the last ETag so an unchanged response comes back as an empty 304.
+// Sends the last records version; the API answers {unchanged:true} when nothing changed. (An HTTP 304
+// would lose its CORS headers on Vercel, so the API never sends one.)
 export async function requestJsonIfChanged(url, options = {}) {
   const cacheKey = url + '\n' + (options.headers?.Authorization || '')
   const cached = unchangedCache.get(cacheKey)
-  const headers = cached ? { ...options.headers, 'If-None-Match': cached.etag } : options.headers
-  return requestJson(url, { ...options, headers }, response => {
-    if (response.status === 304 && cached) return cached.result
-    return undefined
-  }, (response, result) => {
-    const etag = response.headers.get('ETag')
-    if (etag) unchangedCache.set(cacheKey, { etag, result })
-    else unchangedCache.delete(cacheKey)
-  })
+  const headers = cached ? { ...options.headers, 'X-Records-Version': cached.version } : options.headers
+  let version = null
+  const result = await requestJson(url, { ...options, headers }, response => { version = response.headers.get('X-Records-Version') })
+  if (result?.unchanged === true && cached) return cached.result
+  if (version) unchangedCache.set(cacheKey, { version, result })
+  else unchangedCache.delete(cacheKey)
+  return result
 }
 
-export async function requestJson(url, options, notModified, received) {
+export async function requestJson(url, options, received) {
   if (!API_CONFIGURED) {
     throw new ApiError('Online booking is not connected yet. Please contact the HM Laboratory Office for assistance.')
   }
@@ -36,8 +35,6 @@ export async function requestJson(url, options, notModified, received) {
   let body
   try {
     response = await fetch(backendOrigin + url, options)
-    const unchanged = notModified?.(response)
-    if (unchanged !== undefined) return unchanged
     body = await response.text()
   } catch {
     throw new ApiError('The reservation service cannot be reached. Please try again shortly.')
